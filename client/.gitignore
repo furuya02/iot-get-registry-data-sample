@@ -1,0 +1,14 @@
+# 証明書ファイル
+certs/*.pem
+certs/*.key
+certs/*.crt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
