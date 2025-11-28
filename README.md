@@ -47,20 +47,19 @@ get_registry_data("ListThingGroupsForThing", thingName, roleArn)
 ## ディレクトリ構成
 
 ```
-src/
-├── cdk/                    # CDK (TypeScript)
-│   ├── bin/                # CDKエントリーポイント
-│   ├── lib/                # CDKスタック定義
-│   ├── lambda/             # Lambda関数コード
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── cdk.json
-├── client/                 # Pythonクライアント
-│   ├── publish_message.py  # MQTTメッセージ送信スクリプト
-│   ├── requirements.txt
-│   └── certs/              # 証明書配置ディレクトリ
-│       └── .gitkeep
-└── README.md               # このファイル
+cdk/                        # CDK (TypeScript)
+├── bin/                    # CDKエントリーポイント
+├── lib/                    # CDKスタック定義
+├── lambda/                 # Lambda関数コード
+├── package.json
+├── tsconfig.json
+├── cdk.json
+client/                     # Pythonクライアント
+├── publish_message.py      # MQTTメッセージ送信スクリプト
+├── requirements.txt        # 依存パッケージ（awsiotpythonsdk==1.5.4）
+└── certs/                  # 証明書配置ディレクトリ
+  └── .gitkeep
+README.md                   # このファイル
 ```
 
 ## 前提条件
