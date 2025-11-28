@@ -2,7 +2,7 @@
 
 このプロジェクトは、AWS IoT Coreの`get_registry_data()`関数を使用して、デバイスのレジストリ情報を動的に取得するサンプル実装です。
 
-**特徴**: 異なるAPI（`DescribeThing`と`ListThingGroupsForThing`）と異なるIAMロールの組み合わせを検証できます。
+**特徴**: 異なるAPI（`DescribeThing`と`ListThingGroupsForThing`）の動作を検証できます。
 
 ## 概要
 
@@ -102,11 +102,10 @@ cdk deploy
 - `ThingName`: IoT Thing名
 - `ThingGroupName`: IoT Thing Group名
 - `PolicyName`: IoT Policy名
-- `RegistryDataRoleArn`: get_registry_data用IAMロールARN（明示的なレジストリアクセス用）
-- `LambdaFunctionWithRole`: Lambda関数名（DescribeThing用）
-- `LambdaFunctionWithoutRole`: Lambda関数名（ListThingGroupsForThing用）
-- `IoTRuleWithRole`: IoTルール名（DescribeThing使用）
-- `IoTRuleWithoutRole`: IoTルール名（ListThingGroupsForThing使用）
+- `GetRegistryDataRoleArn`: get_registry_data用IAMロールARN
+- `GetRegistryDataFunctionName`: Lambda関数名
+- `DescribeThingRuleName`: IoTルール名（DescribeThing使用）
+- `ListThingGroupsRuleName`: IoTルール名（ListThingGroupsForThing使用）
 - `IoTEndpoint`: MQTT接続用エンドポイント
 - `PublishTopic`: メッセージ送信先トピック
 
@@ -412,37 +411,7 @@ aws iam list-role-policies --role-name ListThingGroupsForThingRole
    - **原因**: API名構文（`"DescribeThing"`, `"ListThingGroupsForThing"`）でroleArnを省略している
    - **対処**: 必ずroleArnパラメータを指定する
 
-## 実装時の重要な発見
-
-### Lambda呼び出し権限の設定
-
-CDKで`CfnTopicRule`を使用する場合、Lambda関数への権限付与には注意が必要です。
-
-**正しい実装方法**:
-
-```typescript
-// Lambda関数に対して、IoTサービスからの呼び出しを許可
-logEventFunction.addPermission('IoTInvokePermission', {
-  principal: new iam.ServicePrincipal('iot.amazonaws.com'),
-  action: 'lambda:InvokeFunction',
-  sourceArn: `arn:aws:iot:${this.region}:${this.account}:rule/*`,
-});
-```
-
-**動作しない方法**:
-
-```typescript
-// ❌ これだけではCfnTopicRuleからの呼び出しに対応できない
-const iotRuleRole = new iam.Role(this, 'IoTRuleRole', {
-  assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
-});
-logEventFunction.grantInvoke(iotRuleRole);
-```
-
-**エラーメッセージ**:
-```
-iot.amazonaws.com is unable to perform: lambda:InvokeFunction on resource: arn:aws:lambda:...:function:xxx
-```
+## 実装時に気になった事項
 
 ### Thing名の指定方法
 
@@ -574,28 +543,6 @@ rm -f src/client/certs/*.pem
 rm -f src/client/certs/*.key
 rm -f certificate-output.json
 ```
-
-## 応用例
-
-このサンプルを基に、以下のような応用が可能です:
-
-1. **動的な閾値管理**: Thing属性に閾値を設定し、IoTルールで判定（`DescribeThing`使用）
-2. **環境別ルーティング**: Thingグループで環境を分け、異なる処理先に振り分け（`ListThingGroupsForThing`使用）
-3. **親子関係の活用**: ゲートウェイの設定を子デバイスが参照（`DescribeThing`使用）
-4. **マルチテナント**: テナントIDをThingグループで管理（`ListThingGroupsForThing`使用）
-5. **クロスアカウントアクセス**: roleArnを活用して別アカウントのThingにアクセス
-
-**注意**: 1つのルールで複数の情報（Thing属性とThingグループ）が必要な場合は、複数のルールを組み合わせるか、属性パス構文（`'attributes'`, `'thingGroups'`）の使用を検討してください。
-
-詳細は[../docs/ideas.md](../docs/ideas.md)を参照してください。
-
-## 参考リンク
-
-- [AWS IoT Core Developer Guide](https://docs.aws.amazon.com/iot/latest/developerguide/)
-- [AWS IoT Rules](https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html)
-- [get_registry_data() Function](https://docs.aws.amazon.com/iot/latest/developerguide/iot-sql-functions.html#iot-sql-function-get-registry-data)
-- [Thing Registry](https://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html)
-- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
 
 ## ライセンス
 
